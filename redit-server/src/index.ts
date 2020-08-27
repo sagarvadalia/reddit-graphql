@@ -12,7 +12,8 @@ import { UserResolver } from './resolvers/user';
 import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
-import { MyContext } from 'types';
+// import { MyContext } from 'types';
+import cors from 'cors';
 const RedisStore = connectRedis(session);
 const redisClient = redis.createClient();
 
@@ -20,6 +21,12 @@ const main = async () => {
   const orm = await MikroORM.init(mikroOrmConfig);
   orm.getMigrator().up(); //migrates whenever there are diffs between migrations
   const app = express();
+  app.use(
+    cors({
+      origin: 'http://localhost:3000',
+      credentials: true, //
+    })
+  );
   app.use(
     session({
       name: 'qid',
@@ -43,9 +50,12 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }): MyContext => ({ em: orm.em, req, res }), //passes this context to all resolvers
+    context: ({ req, res }) => ({ em: orm.em, req, res }), //passes this context to all resolvers
   });
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
   //listens on port 4000
   app.listen(4000, () => {
     console.log('server started on 4000');
