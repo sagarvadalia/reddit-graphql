@@ -14,11 +14,14 @@ import session from 'express-session';
 import connectRedis from 'connect-redis';
 // import { MyContext } from 'types';
 import cors from 'cors';
+import { sendEmail } from './utils/sendEmail';
+import { User } from './entities/User';
 const RedisStore = connectRedis(session);
 const redisClient = redis.createClient();
 
 const main = async () => {
   const orm = await MikroORM.init(mikroOrmConfig);
+
   orm.getMigrator().up(); //migrates whenever there are diffs between migrations
   const app = express();
   app.use(

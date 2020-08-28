@@ -1,3 +1,11 @@
+#SSR Explained
+me -> browse localhost:3000
+request -> next.js server
+-> request to graphql server @localhost:4000
+request for data
+build html
+send to browser
+
 # Example app with [chakra-ui](https://github.com/chakra-ui/chakra-ui)
 
 This example features how to use [chakra-ui](https://github.com/chakra-ui/chakra-ui) as the component library within a Next.js app.
