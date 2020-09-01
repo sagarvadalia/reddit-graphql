@@ -1,28 +1,35 @@
-import { MikroORM } from '@mikro-orm/core';
-import { __prod__, COOKIE_NAME } from './constants';
-// import { Post } from './entities/post';
-import 'reflect-metadata';
-import mikroOrmConfig from './mikro-orm.config';
-import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { buildSchema } from 'type-graphql';
-import { HelloResolver } from './resolvers/hello';
-import { PostResolver } from './resolvers/post';
-import { UserResolver } from './resolvers/user';
-import redis from 'redis';
-import session from 'express-session';
 import connectRedis from 'connect-redis';
 // import { MyContext } from 'types';
 import cors from 'cors';
-import { sendEmail } from './utils/sendEmail';
+import express from 'express';
+import session from 'express-session';
+import Redis from 'ioredis';
+// import { Post } from './entities/post';
+import 'reflect-metadata';
+import { buildSchema } from 'type-graphql';
+import { createConnection } from 'typeorm';
+import { COOKIE_NAME, __prod__ } from './constants';
+import { Post } from './entities/Post';
 import { User } from './entities/User';
-const RedisStore = connectRedis(session);
-const redisClient = redis.createClient();
+import { HelloResolver } from './resolvers/hello';
+import { PostResolver } from './resolvers/post';
+import { UserResolver } from './resolvers/user';
 
 const main = async () => {
-  const orm = await MikroORM.init(mikroOrmConfig);
+  const conn = await createConnection({
+    type: 'postgres',
+    database: 'redditDb',
+    username: 'postgres',
+    password: 'Sagar1996',
+    logging: true,
+    synchronize: true,
+    entities: [Post, User],
+  });
 
-  orm.getMigrator().up(); //migrates whenever there are diffs between migrations
+  const RedisStore = connectRedis(session);
+  const redis = new Redis();
+
   const app = express();
   app.use(
     cors({
@@ -34,7 +41,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true, //reduces pings to redis
       }),
       cookie: {
@@ -53,7 +60,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ em: orm.em, req, res }), //passes this context to all resolvers
+    context: ({ req, res }) => ({ req, res, redis }), //passes this context to all resolvers
   });
   apolloServer.applyMiddleware({
     app,

@@ -27,9 +27,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserResolver = void 0;
 const argon2_1 = __importDefault(require("argon2"));
 const type_graphql_1 = require("type-graphql");
+const typeorm_1 = require("typeorm");
+const uuid_1 = require("uuid");
 const User_1 = require("../entities/User");
 const validateRegister_1 = require("../utils/validateRegister");
 const constants_1 = require("./../constants");
+const sendEmail_1 = require("./../utils/sendEmail");
 const UsernamePasswordInput_1 = require("./UsernamePasswordInput");
 let FieldError = class FieldError {
 };
@@ -58,22 +61,57 @@ UserResponse = __decorate([
     type_graphql_1.ObjectType()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    forgotPassword(email, {}) {
+    changePassword(token, newPassword, { redis, req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            return true;
+            if (newPassword.length <= 2) {
+                return {
+                    errors: [
+                        {
+                            field: 'newPassword',
+                            message: 'length must be at least 3 characters',
+                        },
+                    ],
+                };
+            }
+            const key = constants_1.FORGET_PASSWORD_PREFIX + token;
+            const userId = yield redis.get(key);
+            if (!userId) {
+                return { errors: [{ field: 'token', message: 'token is not valid' }] };
+            }
+            const userIdNum = parseInt(userId);
+            const user = yield User_1.User.findOne(userIdNum);
+            if (!user) {
+                return { errors: [{ field: 'token', message: 'user no longer exists' }] };
+            }
+            yield User_1.User.update({ id: userIdNum }, { password: yield argon2_1.default.hash(newPassword) });
+            yield redis.del(key);
+            req.session.userId = user.id;
+            return { user };
         });
     }
-    me({ em, req }) {
+    forgotPassword(email, { redis }) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('session', req.session);
+            const user = yield User_1.User.findOne({ where: { email } });
+            if (!user) {
+                return true;
+            }
+            else {
+                const token = uuid_1.v4();
+                yield redis.set(constants_1.FORGET_PASSWORD_PREFIX + token, user.id, 'ex', 1000 * 60 * 60 * 24 * 3);
+                sendEmail_1.sendEmail(email, `<a href = "http://localhost:3000/change-password/${token}">Reset Password</a>`);
+                return true;
+            }
+        });
+    }
+    me({ req }) {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!req.session.userId) {
                 return null;
             }
-            const user = yield em.findOne(User_1.User, { id: req.session.userId });
-            return user;
+            return User_1.User.findOne(req.session.userId);
         });
     }
-    register(options, { em, req }) {
+    register(options, { req }) {
         return __awaiter(this, void 0, void 0, function* () {
             const errors = validateRegister_1.validateRegister(options);
             if (errors) {
@@ -82,19 +120,18 @@ let UserResolver = class UserResolver {
             const hashedPassword = yield argon2_1.default.hash(options.password);
             let user;
             try {
-                const result = yield em
-                    .createQueryBuilder(User_1.User)
-                    .getKnexQuery()
-                    .insert({
+                const results = yield typeorm_1.getConnection()
+                    .createQueryBuilder()
+                    .insert()
+                    .into(User_1.User)
+                    .values({
                     username: options.username,
-                    password: hashedPassword,
                     email: options.email,
-                    created_at: new Date(),
-                    updated_at: new Date(),
+                    password: hashedPassword,
                 })
-                    .returning('*');
-                user = result[0];
-                yield em.persistAndFlush(user);
+                    .returning('*')
+                    .execute();
+                user = results.raw[0];
             }
             catch (error) {
                 if ((error === null || error === void 0 ? void 0 : error.code) === '23505') {
@@ -108,13 +145,13 @@ let UserResolver = class UserResolver {
             return { user };
         });
     }
-    login(usernameOrEmail, password, { em, req }) {
+    login(usernameOrEmail, password, { req }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const user = yield em.findOne(User_1.User, usernameOrEmail.includes('@')
+            const user = yield User_1.User.findOne(usernameOrEmail.includes('@')
                 ? {
-                    email: usernameOrEmail,
+                    where: { email: usernameOrEmail },
                 }
-                : { username: usernameOrEmail });
+                : { where: { username: usernameOrEmail } });
             if (!user) {
                 return {
                     errors: [
@@ -153,8 +190,18 @@ let UserResolver = class UserResolver {
     }
 };
 __decorate([
+    type_graphql_1.Mutation(() => UserResponse),
+    __param(0, type_graphql_1.Arg('token')),
+    __param(1, type_graphql_1.Arg('newPassword')),
+    __param(2, type_graphql_1.Ctx()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], UserResolver.prototype, "changePassword", null);
+__decorate([
     type_graphql_1.Mutation(() => Boolean),
-    __param(0, type_graphql_1.Arg('email')), __param(1, type_graphql_1.Ctx()),
+    __param(0, type_graphql_1.Arg('email')),
+    __param(1, type_graphql_1.Ctx()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)

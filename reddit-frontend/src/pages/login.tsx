@@ -6,6 +6,8 @@ import {
   FormErrorMessage,
   Button,
   Box,
+  Flex,
+  Link,
 } from '@chakra-ui/core';
 import { withUrqlClient } from 'next-urql';
 import { Formik, Form } from 'formik';
@@ -16,6 +18,7 @@ import { useLoginMutation } from '../generated/graphql';
 import { toErrorMap } from '../utils/toErrorMap';
 import { useRouter } from 'next/router';
 import { createURQLClient } from '../utils/createURQLClient';
+import NextLink from 'next/link';
 
 export const Login: React.FC<{}> = ({}) => {
   const [, Login] = useLoginMutation();
@@ -51,14 +54,24 @@ export const Login: React.FC<{}> = ({}) => {
               />
             </Box>
 
-            <Button
-              mt={4}
-              isLoading={isSubmitting}
-              type="submit"
-              variantColor="teal"
-            >
-              Register
-            </Button>
+            <Flex>
+              <Button
+                mt={4}
+                mr={8}
+                isLoading={isSubmitting}
+                type="submit"
+                variantColor="teal"
+              >
+                Login
+              </Button>
+              <NextLink href="/forgot-password">
+                <Link>
+                  <Button mt={4} type="submit" variantColor="blue">
+                    Forgot Password
+                  </Button>
+                </Link>
+              </NextLink>
+            </Flex>
           </Form>
         )}
       </Formik>
