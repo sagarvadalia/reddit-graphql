@@ -1,0 +1,13 @@
+{
+  "folders": [
+	{
+		"path": "redit-server"
+	},
+	{
+		"path": "reddit-frontend"
+	}
+],
+  "settings": {
+    "git.ignoreLimitWarning": true
+  }
+}

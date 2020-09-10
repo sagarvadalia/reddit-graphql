@@ -26,13 +26,14 @@ export const Register: React.FC<registerProps> = ({}) => {
       <Formik
         initialValues={{ email: '', username: '', password: '' }}
         onSubmit={async (values, { setErrors }) => {
-          // console.log(register(values));
+          console.log(values);
           const response = await register({ options: values });
           if (response.data?.register.errors) {
             setErrors(toErrorMap(response.data.register.errors));
           } else if (response.data?.register.user) {
             router.push('/');
           }
+          console.log(response);
           return response;
         }}
       >

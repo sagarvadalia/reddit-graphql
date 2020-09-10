@@ -20,13 +20,13 @@ const main = async () => {
   const conn = await createConnection({
     type: 'postgres',
     database: 'redditDb',
-    username: 'postgres',
-    password: 'Sagar1996',
+
     logging: true,
     synchronize: true,
     entities: [Post, User],
   });
-
+  // await Post.delete({});
+  // await User.delete({});
   const RedisStore = connectRedis(session);
   const redis = new Redis();
 
