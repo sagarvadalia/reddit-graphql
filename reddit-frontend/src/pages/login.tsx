@@ -1,24 +1,14 @@
-import React from 'react';
-import {
-  FormControl,
-  FormLabel,
-  Input,
-  FormErrorMessage,
-  Button,
-  Box,
-  Flex,
-  Link,
-} from '@chakra-ui/core';
+import { Box, Button, Flex, Link } from '@chakra-ui/core';
+import { Form, Formik } from 'formik';
 import { withUrqlClient } from 'next-urql';
-import { Formik, Form } from 'formik';
-import { Wrapper } from '../components/wrapper';
-import { InputField } from '../components/inputField';
-import { useMutation } from 'urql';
-import { useLoginMutation } from '../generated/graphql';
-import { toErrorMap } from '../utils/toErrorMap';
-import { useRouter } from 'next/router';
-import { createURQLClient } from '../utils/createURQLClient';
 import NextLink from 'next/link';
+import { useRouter } from 'next/router';
+import React from 'react';
+import InputField from '../components/inputField';
+import { Wrapper } from '../components/wrapper';
+import { useLoginMutation } from '../generated/graphql';
+import { createURQLClient } from '../utils/createURQLClient';
+import { toErrorMap } from '../utils/toErrorMap';
 
 export const Login: React.FC<{}> = ({}) => {
   const [, Login] = useLoginMutation();
@@ -33,7 +23,11 @@ export const Login: React.FC<{}> = ({}) => {
           if (response.data?.login.errors) {
             setErrors(toErrorMap(response.data.login.errors));
           } else if (response.data?.login.user) {
-            router.push('/');
+            if (typeof router.query.next === 'string') {
+              router.push(router.query.next);
+            } else {
+              router.push('/');
+            }
           }
           return response;
         }}
