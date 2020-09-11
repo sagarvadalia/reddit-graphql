@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { NextPage } from 'next';
-import { Wrapper } from '../wrapper';
+import { Wrapper } from '../../components/wrapper';
 import { Formik, Form } from 'formik';
 import { Login } from '../login';
 import { toErrorMap } from '../../utils/toErrorMap';
-import { InputField } from '../inputField';
+import { InputField } from '../../components/inputField';
 import { Box, Button, Link, Flex } from '@chakra-ui/core';
 import { useChangePasswordMutation } from '../../generated/graphql';
 import { useRouter } from 'next/router';

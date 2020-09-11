@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wrapper } from '../pages/wrapper';
+import { Wrapper } from './wrapper';
 import { Navbar } from './Navbar';
 
 interface LayoutProps {

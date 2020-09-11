@@ -40,3 +40,4 @@ export const InputField: React.FC<inputFieldProps> = ({
     </FormControl>
   );
 };
+export default InputField;

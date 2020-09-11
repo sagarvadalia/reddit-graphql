@@ -11,8 +11,8 @@ import {
 } from '@chakra-ui/core';
 import { withUrqlClient } from 'next-urql';
 import { Formik, Form } from 'formik';
-import { Wrapper } from './wrapper';
-import { InputField } from './inputField';
+import { Wrapper } from '../components/wrapper';
+import { InputField } from '../components/inputField';
 import { useMutation } from 'urql';
 import { useLoginMutation } from '../generated/graphql';
 import { toErrorMap } from '../utils/toErrorMap';
